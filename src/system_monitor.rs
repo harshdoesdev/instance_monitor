@@ -1,17 +1,14 @@
-use std::thread;
-use std::time::Duration;
 use sysinfo::{CpuExt, System, SystemExt};
-
 use instance_monitor::metric_registry::{MetricRegistry, MetricType};
 use instance_monitor::error::AppError;
+use tokio::time::Duration;
 
-// Helper function to get the IP address
 fn get_instance_ip() -> Option<String> {
     use std::net::ToSocketAddrs;
     
     let hostname = hostname::get().ok()?.into_string().ok()?;
-    let addresses = (hostname.as_str(), 0).to_socket_addrs().ok()?;
-    addresses.filter(|addr| addr.is_ipv4()).next().map(|addr| addr.ip().to_string())
+    let mut addresses = (hostname.as_str(), 0).to_socket_addrs().ok()?;
+    addresses.find(|addr| addr.is_ipv4()).map(|addr| addr.ip().to_string())
 }
 
 // System monitor for CPU and memory usage
@@ -30,7 +27,8 @@ pub fn system_monitor(registry: MetricRegistry) -> Result<(), AppError> {
         metric.add_label("instance", &instance_ip);
     }
 
-    thread::spawn(move || {
+    // Spawn a Tokio task for the system monitor
+    tokio::spawn(async move {
         let mut system = System::new_all();
 
         loop {
@@ -54,7 +52,7 @@ pub fn system_monitor(registry: MetricRegistry) -> Result<(), AppError> {
                 }
             }
 
-            thread::sleep(Duration::from_secs(5));
+            tokio::time::sleep(Duration::from_secs(5)).await;
         }
     });
 
