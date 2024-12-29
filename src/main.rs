@@ -50,10 +50,13 @@ async fn main() -> Result<(), AppError> {
     );
 
     let listener = tokio::net::TcpListener::bind(socket)
-    .await
-    .map_err(|_| AppError::ListenerBindError)?;
+        .await
+        .map_err(|_| AppError::ListenerBindError)?;
 
-    println!("Listening at http://0.0.0.0:{}", cli.port);
+    println!(
+        "Listening at: http://0.0.0.0:{port}\nMetrics endpoint: http://0.0.0.0:{port}/metrics",
+        port = cli.port
+    );
 
     axum::serve(listener, app)
         .await
