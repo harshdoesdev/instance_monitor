@@ -20,6 +20,9 @@ struct Cli {
 
     #[arg(long, default_value_t = 5)]
     delay: u64,
+
+    #[arg(long, default_value_t = String::from("error"))]
+    log_level: String,
 }
 
 #[derive(Debug, Clone)]
@@ -31,7 +34,9 @@ pub struct AppState {
 async fn main() -> Result<(), AppError> {
     let cli = Cli::parse();
 
-    env_logger::init();
+    env_logger::Builder::new()
+        .filter_level(cli.log_level.parse().unwrap_or(log::LevelFilter::Error))
+        .init();
 
     let registry = MetricRegistry::default();
 
