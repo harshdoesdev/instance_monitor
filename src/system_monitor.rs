@@ -1,18 +1,20 @@
-use sysinfo::{CpuExt, System, SystemExt};
-use instance_monitor::metric_registry::{MetricRegistry, MetricType};
 use instance_monitor::error::AppError;
+use instance_monitor::metric_registry::{MetricRegistry, MetricType};
+use sysinfo::{CpuExt, System, SystemExt};
 use tokio::time::Duration;
 
 fn get_instance_ip() -> Option<String> {
     use std::net::ToSocketAddrs;
-    
+
     let hostname = hostname::get().ok()?.into_string().ok()?;
     let mut addresses = (hostname.as_str(), 0).to_socket_addrs().ok()?;
-    addresses.find(|addr| addr.is_ipv4()).map(|addr| addr.ip().to_string())
+    addresses
+        .find(|addr| addr.is_ipv4())
+        .map(|addr| addr.ip().to_string())
 }
 
 // System monitor for CPU and memory usage
-pub fn system_monitor(registry: MetricRegistry) -> Result<(), AppError> {
+pub fn system_monitor(registry: MetricRegistry, delay: u64) -> Result<(), AppError> {
     registry.register_metric("cpu_usage", MetricType::Gauge)?;
     registry.register_metric("memory_usage", MetricType::Gauge)?;
 
@@ -52,7 +54,7 @@ pub fn system_monitor(registry: MetricRegistry) -> Result<(), AppError> {
                 }
             }
 
-            tokio::time::sleep(Duration::from_secs(5)).await;
+            tokio::time::sleep(Duration::from_secs(delay)).await;
         }
     });
 
